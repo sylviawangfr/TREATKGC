@@ -43,6 +43,8 @@ class LinkPrediction(nn.Module):
             self.loss_fn = nll_loss
         elif loss_fn == 'sigmoid':
             self.loss_fn = sigmoid_loss
+        elif loss_fn == 'bce':
+            self.loss_fn = bce_loss
         else:
             raise ValueError(f'Unkown loss function {loss_fn}')
 
@@ -297,6 +299,7 @@ def simple_score(heads, tails, rels):
 
 def rotate_score(heads, tails, rels, embedding_range):
     pi = 3.14159265358979323846
+    margin = 1.0
     re_head, im_head = torch.chunk(heads, chunks=2, dim=-1)
     re_tail, im_tail = torch.chunk(tails, chunks=2, dim=-1)
     phase_relation = rels / (embedding_range / pi)
@@ -308,7 +311,7 @@ def rotate_score(heads, tails, rels, embedding_range):
     im_score = im_score - im_tail
     score = torch.stack([re_score, im_score], dim=0)
     score = score.norm(dim=0)
-    score = -score.sum(dim=-1)
+    score = margin - score.sum(dim=-1)
     return score
 
 
@@ -316,6 +319,15 @@ def margin_loss(pos_scores, neg_scores):
     loss = 1 - pos_scores + neg_scores
     loss[loss < 0] = 0
     return loss.mean()
+
+
+def bce_loss(pos_scores, neg_scores):
+    pos_target = torch.ones_like(pos_scores)
+    flat_neg = neg_scores.reshape(neg_scores.shape[0] * neg_scores.shape[1], 1)
+    neg_target = torch.zeros_like(flat_neg)
+    scores = torch.cat([pos_scores, flat_neg], dim=0)
+    target = torch.cat([pos_target, neg_target], dim=0)
+    return F.binary_cross_entropy_with_logits(scores, target)
 
 
 def nll_loss(pos_scores, neg_scores):

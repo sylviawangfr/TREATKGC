@@ -138,6 +138,13 @@ def eval_link_prediction(model, triples_loader, text_dataset, entities,
         pred_ents = torch.cat((heads_predictions, tails_predictions))
         true_ents = torch.cat((heads, tails))
 
+        ### assign lower score to known true triples to exclude them in evaluation
+        heads_filter, tails_filter = utils.get_triple_filters(triples, filtering_graph,
+                                           num_entities, ent2idx)
+        # Filter entities by assigning them the lowest score in the batch
+        filter_mask = torch.cat((heads_filter, tails_filter)).to(device)
+        pred_ents[filter_mask] = pred_ents.min() - 1.0
+        ###
         hits = utils.hit_at_k(pred_ents, true_ents, hit_positions)
         for j, h in enumerate(hits):
             hits_at_k[hit_positions[j]] += h
@@ -570,7 +577,7 @@ def link_prediction(dataset, inductive, dim, model, rel_model, loss_fn,
             _log.info('Evaluating on validation set')
             val_mrr, hit_at_k, _ = eval_link_prediction(model, valid_loader, train_data,
                                                         train_val_ent, epoch,
-                                                        emb_batch_size, prefix='valid')
+                                                        emb_batch_size, filtering_graph=graph, prefix='valid')
 
             # Keep checkpoint of best performing model (based on raw MRR)
             if val_mrr > best_valid_mrr:
@@ -609,7 +616,7 @@ def link_prediction(dataset, inductive, dim, model, rel_model, loss_fn,
         valid_loader_silver = DataLoader(valid_data_silver, eval_batch_size, pin_memory=True, num_workers=NUM_WORKERS)
         val_mrr, hit_at_k, ent_emb = eval_link_prediction(model, valid_loader_silver, train_data,
                                                           train_val_ent, 0,
-                                                          emb_batch_size, prefix='valid', return_embeddings=True)
+                                                          emb_batch_size, filtering_graph=graph, prefix='valid', return_embeddings=True)
         log_str = '-------blp eval on rel silver test set ---------\n'
         for k, value in hit_at_k.items():
             log_str += f'hits@{k}: {value:.4f}\n'

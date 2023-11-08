@@ -23,15 +23,15 @@ class BLPConfig:
 
     def getRotate(self):
         conf = {
-            'dim': 1024,
+            'dim': 1000,
             'model': 'blp',
             'rel_model': 'rotate',
-            'loss_fn': 'sigmoid',
+            'loss_fn': 'bce',
             'encoder_name': 'bert-base-cased',
-            'regularizer': 1e-3,
+            'regularizer': 0,
             'max_len': 32,
             'num_negatives': 64,
-            'lr': 2e-5,
+            'lr': 5e-7,
             'use_scheduler': True,
             'batch_size': 64,
             'emb_batch_size': 64,

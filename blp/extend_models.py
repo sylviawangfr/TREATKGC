@@ -108,6 +108,8 @@ class LinkPredictionWithNegStrategy(nn.Module):
             self.loss_fn = nll_loss
         elif loss_fn == 'sigmoid':
             self.loss_fn = sigmoid_loss
+        elif loss_fn == 'bce':
+            self.loss_fn = bce_loss
         else:
             raise ValueError(f'Unkown loss function {loss_fn}')
 
