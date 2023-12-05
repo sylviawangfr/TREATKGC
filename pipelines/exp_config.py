@@ -1,12 +1,12 @@
 class BLPConfig:
     def getComplex(self):
         conf = {
-            'dim': 128,
+            'dim': 200,
             'model': 'blp',
             'rel_model': 'complex',
-            'loss_fn': 'margin',
+            'loss_fn': 'bce',
             'encoder_name': 'bert-base-cased',
-            'regularizer': 1e-3,
+            'regularizer': 1e-2,
             'max_len': 32,
             'num_negatives': 64,
             'lr': 0.005,
